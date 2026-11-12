@@ -5,14 +5,11 @@
 
 #include "../include/conv1_forward.h"
 
-// Layer & memory configurations
-#include "../include/parameters/Parameter5_out0.h"
 #include "stddef.h"
 
 // entry and output structure
 
 // Memory block
-static unsigned char mem[100352];
 
 void conv1_forward (
     struct conv1_forward_param* param,
@@ -20,15 +17,14 @@ void conv1_forward (
 )
 {
     const float* Convolution28_input_0 = param->Convolution28_input_0;
+    const float (*weight)[1][5][5] = param->weight;
     
     // Convolution28
-    float *Convolution28_output_0 = (float*) (mem + 0);
+    float (*Convolution28_output_0_v)[1][8][28][28] = (float(*)[1][8][28][28]) (result->Convolution28_output_0);
     {
-        
-
-        float (*Convolution28_output_0_v)[1][8][28][28] = (float(*)[1][8][28][28]) (mem + 0);
         float (*Convolution28_input_0_v)[1][1][28][28] = (float(*)[1][1][28][28]) (Convolution28_input_0);
-        float (*Parameter5_out0_output_0_v)[8][1][5][5] = (float(*)[8][1][5][5]) (Parameter5_out0_output_0);
+        const float (*Parameter5_out0_output_0_v)[8][1][5][5] =
+            (const float (*)[8][1][5][5]) weight;
         
 
         // Conv2D (inputs: 6, outputs 1) with
@@ -76,5 +72,4 @@ void conv1_forward (
     }
 
 
-    memcpy(result->Convolution28_output_0, Convolution28_output_0, sizeof(result->Convolution28_output_0));
 }

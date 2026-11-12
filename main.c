@@ -4,6 +4,7 @@
 
 #ifndef LOCOD_FPGA
 #include "locod.h"
+#include "conv/dnn/include/parameters/Parameter5_out0.h"
 #endif //LOCOD_FPGA
 
 #include "conv/dnn/include/conv1_forward.h"  
@@ -68,6 +69,7 @@ int main(int argc, char* argv[])
     if (load_image(argv[1], (float*) entry_2.Convolution28_input_0) != 0) {
         return 1;
     }
+    memcpy(entry_2.weight, Parameter5_out0_output_0, sizeof(entry_2.weight));
 
     init_locod(1);
 
