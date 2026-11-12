@@ -5,7 +5,6 @@
 
 struct conv1_forward_param {
     float Convolution28_input_0[784];
-    float weight[8][1][5][5];
 };
 
 struct conv1_forward_res {

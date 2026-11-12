@@ -1,26 +1,19 @@
 #include <stdint.h>
 #include <stddef.h>
 #include "../include/conv1_forward.h"
+#include "../include/parameters/Parameter5_out0.h"   /* weights: must stay outside any #ifndef LOCOD_FPGA */
 
 void conv1_forward (
     struct conv1_forward_param* param,
     struct conv1_forward_res* result
 )
 {
-    // local copies of the input and of the weights
+    // local copy of the input
     float input_local[1][1][28][28];
-    float weight_local[8][1][5][5];
 
     for (uint32_t y = 0; y < 28; ++y) {
         for (uint32_t x = 0; x < 28; ++x) {
             input_local[0][0][y][x] = param->Convolution28_input_0[y * 28 + x];
-        }
-    }
-    for (uint32_t c = 0; c < 8; ++c) {
-        for (uint32_t h = 0; h < 5; ++h) {
-            for (uint32_t w = 0; w < 5; ++w) {
-                weight_local[c][0][h][w] = param->weight[c][0][h][w];
-            }
         }
     }
 
@@ -28,7 +21,7 @@ void conv1_forward (
     float (*Convolution28_output_0_v)[1][8][28][28] = (float(*)[1][8][28][28]) (result->Convolution28_output_0);
     {
         float (*Convolution28_input_0_v)[1][1][28][28] = &input_local;
-        float (*Parameter5_out0_output_0_v)[8][1][5][5] = &weight_local;
+        const float (*Parameter5_out0_output_0_v)[8][1][5][5] = (const float (*)[8][1][5][5]) Parameter5_out0_output_0;
 
         for (size_t b = 0; b < 1; ++b) {
             for (size_t c = 0; c < 8; ++c) {
