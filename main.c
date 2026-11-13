@@ -61,8 +61,10 @@ int main(int argc, char* argv[])
         return 1;
     }
 
-    static struct conv1_forward_param entry_2;
-    static struct conv1_forward_res output_2;
+    static struct conv1_forward_param entry_2;       /* the image */
+    static struct conv1_forward_res output_2;        /* merged output of the 8 tiles */
+    static struct conv1_forward_tile_param entry_tile[CONV1_N_TILES];
+    static struct conv1_forward_tile_res res_tile[CONV1_N_TILES];
     static struct forward_param entry_3;
     static struct forward_res output_3;
   
@@ -71,11 +73,42 @@ int main(int argc, char* argv[])
         return 1;
     }
 
-    init_locod(1);
+    /* the number of accelerators must be a literal for locod.sh */
+    init_locod(8);
 
-    /* model 2: first conv */
-    FPGA(conv1_forward, &entry_2, &output_2, 0);
-    wait_accelerator(&output_2, 0);
+    /* model 2: first conv, split over 8 accelerators (1 output channel each) */
+    for (int t = 0; t < CONV1_N_TILES; ++t) {
+        memcpy(entry_tile[t].Convolution28_Quantizer_0_input_0,
+               entry_2.Convolution28_Quantizer_0_input_0,
+               sizeof(entry_tile[t].Convolution28_Quantizer_0_input_0));
+        entry_tile[t].tile = t;
+    }
+
+    /* one line per accelerator, accelerator number = literal at the end (locod.sh reads it) */
+    FPGA(conv1_forward_tile, &entry_tile[0], &res_tile[0], 0);
+    FPGA(conv1_forward_tile, &entry_tile[1], &res_tile[1], 1);
+    FPGA(conv1_forward_tile, &entry_tile[2], &res_tile[2], 2);
+    FPGA(conv1_forward_tile, &entry_tile[3], &res_tile[3], 3);
+    FPGA(conv1_forward_tile, &entry_tile[4], &res_tile[4], 4);
+    FPGA(conv1_forward_tile, &entry_tile[5], &res_tile[5], 5);
+    FPGA(conv1_forward_tile, &entry_tile[6], &res_tile[6], 6);
+    FPGA(conv1_forward_tile, &entry_tile[7], &res_tile[7], 7);
+
+    wait_accelerator(&res_tile[0], 0);
+    wait_accelerator(&res_tile[1], 1);
+    wait_accelerator(&res_tile[2], 2);
+    wait_accelerator(&res_tile[3], 3);
+    wait_accelerator(&res_tile[4], 4);
+    wait_accelerator(&res_tile[5], 5);
+    wait_accelerator(&res_tile[6], 6);
+    wait_accelerator(&res_tile[7], 7);
+
+    /* merge: tile t = output channels t*CONV1_TILE_OC ... (each channel is 28 x 28 floats) */
+    for (int t = 0; t < CONV1_N_TILES; ++t) {
+        memcpy(output_2.Convolution28_DeQuantizer_output_0 + t * CONV1_TILE_OC * 784,
+               res_tile[t].Convolution28_DeQuantizer_output_0,
+               sizeof(res_tile[t].Convolution28_DeQuantizer_output_0));
+    }
 
     
     /* model 2 output -> model 3 input (both 1 x 8 x 28 x 28 floats) */
