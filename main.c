@@ -4,7 +4,7 @@
 
 #ifndef LOCOD_FPGA
 #include "locod.h"
-#include "conv/dnn/include/parameters/Parameter5_out0.h"
+#include "conv/dnn/include/parameters/Convolution28_Quantizer_1.h"
 #endif //LOCOD_FPGA
 
 #include "conv/dnn/include/conv1_forward.h"  
@@ -41,8 +41,9 @@ static int load_image(const char* path, float* data)
     for (int y = 0; y < IMG_H; ++y) {
         for (int x = 0; x < IMG_W; ++x) {
             for (int c = 0; c < IMG_C; ++c) {
+                /* quantized model: Quantizer_0 expects raw pixel values 0..255 (x * 1.0 - 128), no / 255 */
                 data[c * IMG_H * IMG_W + y * IMG_W + x] =
-                    (float)img[(y * IMG_W + x) * IMG_C + c] / 255.0f;
+                    (float)img[(y * IMG_W + x) * IMG_C + c];
             }
         }
     }
@@ -66,19 +67,19 @@ int main(int argc, char* argv[])
     static struct forward_res output_3;
   
 
-    if (load_image(argv[1], (float*) entry_2.Convolution28_input_0) != 0) {
+    if (load_image(argv[1], (float*) entry_2.Convolution28_Quantizer_0_input_0) != 0) {
         return 1;
     }
 
-    init_locod(1);
+    init_locod(0);
 
     /* model 2: first conv */
-    FPGA(conv1_forward, &entry_2, &output_2,0);
-    wait_accelerator(&output_2,0);
+    CPU(conv1_forward, &entry_2, &output_2);
+    //wait_accelerator(&output_2,0);
 
     
     /* model 2 output -> model 3 input (both 1 x 8 x 28 x 28 floats) */
-    memcpy(entry_3.Plus30_input_0, output_2.Convolution28_output_0, sizeof(entry_3.Plus30_input_0));
+    memcpy(entry_3.Plus30_input_0, output_2.Convolution28_DeQuantizer_output_0, sizeof(entry_3.Plus30_input_0));
 
     /* model 3: everything after the first conv */
     CPU(forward, &entry_3, &output_3);

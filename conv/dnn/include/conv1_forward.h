@@ -4,11 +4,11 @@
 
 
 struct conv1_forward_param {
-    float Convolution28_input_0[784];
+    float Convolution28_Quantizer_0_input_0[784];
 };
 
 struct conv1_forward_res {
-    float Convolution28_output_0[6272];
+    float Convolution28_DeQuantizer_output_0[6272];
 };
 
 void conv1_forward (
