@@ -71,11 +71,11 @@ int main(int argc, char* argv[])
         return 1;
     }
 
-    init_locod(0);
+    init_locod(1);
 
     /* model 2: first conv */
-    CPU(conv1_forward, &entry_2, &output_2);
-    //wait_accelerator(&output_2,0);
+    FPGA(conv1_forward, &entry_2, &output_2, 0);
+    wait_accelerator(&output_2, 0);
 
     
     /* model 2 output -> model 3 input (both 1 x 8 x 28 x 28 floats) */

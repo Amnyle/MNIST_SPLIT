@@ -1,4 +1,3 @@
-
 #include <stdint.h>
 #include <string.h>
 
@@ -11,43 +10,39 @@
 
 // entry and output structure
 
-// Memory block
-static unsigned char mem[203840];
-
-static inline float locod_roundf(float value)
-{
-    return (float)(value >= 0.0f
-        ? (int32_t)(value + 0.5f)
-        : (int32_t)(value - 0.5f));
-}
-
 void conv1_forward (
     struct conv1_forward_param* param,
     struct conv1_forward_res* result
 )
 {
+    // Local arrays (BRAM), one per buffer, each with its own natural type.
+    // This replaces the generic byte pool "static unsigned char mem[203840]".
+    int8_t  Convolution28_Quantizer_0_output_0[784];   // was (int8_t*)  (mem + 0)
+    int32_t Convolution28_output_0[6272];              // was (int32_t*) (mem + 3136)
+
     const float* Convolution28_Quantizer_0_input_0 = param->Convolution28_Quantizer_0_input_0;
     
     // Convolution28_Quantizer_0
-    int8_t* Convolution28_Quantizer_0_output_0 = (int8_t*) (mem + 0);   // FIX: was float*
     {
         for (size_t i = 0; i < 784; ++i) {
             float value = Convolution28_Quantizer_0_input_0[i] * 1.0 + -128.0;
-            value = locod_roundf(value);
+            // rounding written inline (was the helper function locod_roundf)
+            value = (float)(value >= 0.0f
+                ? (int32_t)(value + 0.5f)
+                : (int32_t)(value - 0.5f));
             value = value < -3.4028234663852886e+38 ? -3.4028234663852886e+38 : value;
             value = value > 3.4028234663852886e+38 ? 3.4028234663852886e+38 : value;
-            Convolution28_Quantizer_0_output_0[i] = (int8_t)value;      // FIX: was (float)value
+            Convolution28_Quantizer_0_output_0[i] = (int8_t)value;
         }
     }
 
 
     
     // Convolution28
-    int32_t *Convolution28_output_0 = (int32_t*) (mem + 3136);
     {
         
 
-        int32_t (*Convolution28_output_0_v)[1][8][28][28] = (int32_t(*)[1][8][28][28]) (mem + 3136);
+        int32_t (*Convolution28_output_0_v)[1][8][28][28] = (int32_t(*)[1][8][28][28]) (Convolution28_output_0);
         int8_t (*Convolution28_Quantizer_0_output_0_v)[1][1][28][28] = (int8_t(*)[1][1][28][28]) (Convolution28_Quantizer_0_output_0);
         int8_t (*Convolution28_Quantizer_1_output_0_v)[8][1][5][5] = (int8_t(*)[8][1][5][5]) (Convolution28_Quantizer_1_output_0);
         
@@ -99,13 +94,10 @@ void conv1_forward (
 
     
     // Convolution28_DeQuantizer
-    float* Convolution28_DeQuantizer_output_0 = (float*) (mem + 103488);
+    // writes straight into result (no float buffer + memcpy anymore)
     {
         for (size_t i = 0; i < 6272; ++i) {
-            Convolution28_DeQuantizer_output_0[i] = (float)(Convolution28_output_0[i] * 0.008023343048989773 - 0.0);
+            result->Convolution28_DeQuantizer_output_0[i] = (float)(Convolution28_output_0[i] * 0.008023343048989773 - 0.0);
         }
     }
-
-
-    memcpy(result->Convolution28_DeQuantizer_output_0, Convolution28_DeQuantizer_output_0, sizeof(result->Convolution28_DeQuantizer_output_0));
 }
